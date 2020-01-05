@@ -70,7 +70,7 @@ public class DepartmentHandler {
         //1-The only solution for saving Mono - https://stackoverflow.com/questions/47918441/why-spring-reactivemongorepository-doest-have-save-method-for-mono
         Mono<Department> department=request.bodyToMono(Department.class);
         Mono<Department> departmentSaved=department.flatMap(entity -> departmentRepository.save(entity));
-        return ServerResponse.status(HttpStatus.OK).body(departmentSaved, Department.class);
+        return ServerResponse.status(HttpStatus.CREATED).body(departmentSaved, Department.class);
 
         //2
         /*Mono<Department> departmentAdded= departmentRepository.saveAll(department).next();
@@ -78,6 +78,74 @@ public class DepartmentHandler {
 
         //3
         // return ServerResponse.ok().build(departmentRepository.saveAll(request.bodyToMono(Department.class)).next());
+    }
+
+    public Mono<ServerResponse> put(ServerRequest request) {
+        Long departmentId= Long.valueOf(request.pathVariable("id"));
+        Mono<Department> departmentToPut=request.bodyToMono(Department.class);
+        Mono<Department> departmentPut=departmentRepository.findByDepartmentId(departmentId)
+                .flatMap(department ->departmentRepository.delete(department))
+                .then(departmentRepository.saveAll(departmentToPut).next());
+
+        return ServerResponse.status(HttpStatus.OK).body(departmentPut, Department.class);
+
+        // Possible 2nd solution
+        /*
+        Long departmentId= Long.valueOf(request.pathVariable("id"));
+        Mono<Department> departmentToPut=request.bodyToMono(Department.class);
+        Mono<Department> departmentFound=departmentRepository.findByDepartmentId(departmentId);
+        Mono<Department> departmentPut=departmentFound.map(departmentFromRepo -> {
+            departmentToPut.map(departmentBeingPut -> {
+                if (departmentBeingPut.getName()!=null) {
+                    departmentFromRepo.setName(departmentBeingPut.getName());
+                }
+                if (departmentBeingPut.getHospitalId()!=null) {
+                    departmentFromRepo.setHospitalId(departmentBeingPut.getHospitalId());
+                }
+                if (departmentBeingPut.getPatientList()!=null) {
+                    departmentFromRepo.setPatientList(departmentBeingPut.getPatientList());
+                }
+                return departmentFromRepo;
+            }).subscribe();
+            return departmentFromRepo;
+        });
+        return ServerResponse.status(HttpStatus.OK).body(departmentPut, Department.class);*/
+    }
+
+    public Mono<ServerResponse> patch(ServerRequest request) {
+        Long departmentId= Long.valueOf(request.pathVariable("id"));
+        Mono<Department> departmentToPatch=request.bodyToMono(Department.class);
+
+        Mono<Department> departmentFound=departmentRepository.findByDepartmentId(departmentId);
+        Mono<Department> departmentPatched=departmentFound.map(departmentFromRepo -> {
+
+            departmentToPatch.map(departmentBeingPatched -> {
+
+                if (departmentBeingPatched.getDepartmentId()!=null) {
+                    departmentFromRepo.setDepartmentId(departmentBeingPatched.getDepartmentId());
+                }
+                if (departmentBeingPatched.getName()!=null) {
+                    departmentFromRepo.setName(departmentBeingPatched.getName());
+                }
+                if (departmentBeingPatched.getHospitalId()!=null) {
+                    departmentFromRepo.setHospitalId(departmentBeingPatched.getHospitalId());
+                }
+                if (departmentBeingPatched.getPatientList()!=null) {
+                    departmentFromRepo.setPatientList(departmentBeingPatched.getPatientList());
+                }
+                return departmentFromRepo;
+            }).subscribe();
+            return departmentFromRepo;
+        });
+        //return departmentRepository.saveAll(departmentPatched).next();
+        return ServerResponse.status(HttpStatus.CREATED).body(departmentRepository.saveAll(departmentPatched).next(), Department.class);
+    }
+
+    public Mono<ServerResponse> delete(ServerRequest request) {
+        Long departmentId= Long.valueOf(request.pathVariable("id"));
+        Mono<Department> departmentToBeDeleted=departmentRepository.findByDepartmentId(departmentId);
+        return departmentToBeDeleted.flatMap(department -> ServerResponse.noContent().build(departmentRepository.delete(department)))
+                .switchIfEmpty(ServerResponse.notFound().build());
     }
 
     public Mono<ServerResponse> getByHospitalId(ServerRequest request) {

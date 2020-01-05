@@ -75,7 +75,7 @@ public class HospitalHandler {
         //1-The only solution for saving Mono - https://stackoverflow.com/questions/47918441/why-spring-reactivemongorepository-doest-have-save-method-for-mono
         Mono<Hospital> hospital=request.bodyToMono(Hospital.class);
         Mono<Hospital> hospitalSaved=hospital.flatMap(entity -> hospitalRepository.save(entity));
-        return ServerResponse.status(HttpStatus.OK).body(hospitalSaved, Hospital.class);
+        return ServerResponse.status(HttpStatus.CREATED).body(hospitalSaved, Hospital.class);
 
         //2
         /*Mono<Hospital> hospitalAdded= hospitalRepository.saveAll(hospital).next();
@@ -83,6 +83,80 @@ public class HospitalHandler {
 
         //3
         // return ServerResponse.ok().build(hospitalRepository.saveAll(request.bodyToMono(Hospital.class)).next());
+    }
+
+    public Mono<ServerResponse> put(ServerRequest request) {
+        Long hospitalId= Long.valueOf(request.pathVariable("id"));
+        Mono<Hospital> hospitalToPut=request.bodyToMono(Hospital.class);
+        Mono<Hospital> hospitalPut=hospitalRepository.findByHospitalId(hospitalId)
+                .flatMap(hospital ->hospitalRepository.delete(hospital))
+                .then(hospitalRepository.saveAll(hospitalToPut).next());
+
+        return ServerResponse.status(HttpStatus.OK).body(hospitalPut, Hospital.class);
+
+        // Possible 2nd solution
+        /*
+        Long hospitalId= Long.valueOf(request.pathVariable("id"));
+        Mono<Hospital> hospitalToPut=request.bodyToMono(Hospital.class);
+        Mono<Hospital> hospitalFound=hospitalRepository.findByHospitalId(hospitalId);
+        Mono<Hospital> hospitalPut=hospitalFound.map(hospitalFromRepo -> {
+            hospitalToPut.map(hospitalBeingPut -> {
+                if (hospitalBeingPut.getName()!=null) {
+                    hospitalFromRepo.setName(hospitalBeingPut.getName());
+                }
+                if (hospitalBeingPut.getAddress()!=null) {
+                    hospitalFromRepo.setAddress(hospitalBeingPut.getAddress());
+                }
+                if (hospitalBeingPut.getDepartmentId()!=null) {
+                    hospitalFromRepo.setDepartmentId(hospitalBeingPut.getDepartmentId());
+                }
+                if (hospitalBeingPut.getPatientList()!=null) {
+                    hospitalFromRepo.setPatientList(hospitalBeingPut.getPatientList());
+                }
+                return hospitalFromRepo;
+            }).subscribe();
+            return hospitalFromRepo;
+        });
+        return ServerResponse.status(HttpStatus.OK).body(hospitalPut, Hospital.class);*/
+    }
+
+    public Mono<ServerResponse> patch(ServerRequest request) {
+        Long hospitalId= Long.valueOf(request.pathVariable("id"));
+        Mono<Hospital> hospitalToPatch=request.bodyToMono(Hospital.class);
+
+        Mono<Hospital> hospitalFound=hospitalRepository.findByHospitalId(hospitalId);
+        Mono<Hospital> hospitalPatched=hospitalFound.map(hospitalFromRepo -> {
+
+            hospitalToPatch.map(hospitalBeingPatched -> {
+
+                if (hospitalBeingPatched.getHospitalId()!=null) {
+                    hospitalFromRepo.setHospitalId(hospitalBeingPatched.getHospitalId());
+                }
+                if (hospitalBeingPatched.getName()!=null) {
+                    hospitalFromRepo.setName(hospitalBeingPatched.getName());
+                }
+                if (hospitalBeingPatched.getAddress()!=null) {
+                    hospitalFromRepo.setAddress(hospitalBeingPatched.getAddress());
+                }
+                if (hospitalBeingPatched.getDepartmentList()!=null) {
+                    hospitalFromRepo.setDepartmentList(hospitalBeingPatched.getDepartmentList());
+                }
+                if (hospitalBeingPatched.getPatientList()!=null) {
+                    hospitalFromRepo.setPatientList(hospitalBeingPatched.getPatientList());
+                }
+                return hospitalFromRepo;
+            }).subscribe();
+            return hospitalFromRepo;
+        });
+        //return hospitalRepository.saveAll(hospitalPatched).next();
+        return ServerResponse.status(HttpStatus.CREATED).body(hospitalRepository.saveAll(hospitalPatched).next(), Hospital.class);
+    }
+
+    public Mono<ServerResponse> delete(ServerRequest request) {
+        Long hospitalId= Long.valueOf(request.pathVariable("id"));
+        Mono<Hospital> hospitalToBeDeleted=hospitalRepository.findByHospitalId(hospitalId);
+        return hospitalToBeDeleted.flatMap(hospital -> ServerResponse.noContent().build(hospitalRepository.delete(hospital)))
+                .switchIfEmpty(ServerResponse.notFound().build());
     }
 
     public Mono<ServerResponse> getHospitalWithDepartments(ServerRequest request) {

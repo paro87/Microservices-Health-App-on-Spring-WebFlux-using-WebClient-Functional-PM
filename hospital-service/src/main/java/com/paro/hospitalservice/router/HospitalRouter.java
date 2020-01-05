@@ -25,15 +25,18 @@ public class HospitalRouter {
                 .route(GET("/").and(accept(APPLICATION_JSON)), hospitalHandler::getAll)
                 .andRoute(GET("/{id}").and(accept(APPLICATION_JSON)), hospitalHandler::getByHospitalId)
                 .andRoute(POST("/").and(accept(APPLICATION_JSON)).and(contentType(APPLICATION_JSON)), hospitalHandler::add)
+                .andRoute(PUT("/{id}").and(accept(APPLICATION_JSON)), hospitalHandler::put)
+                .andRoute(PATCH("/{id}").and(accept(APPLICATION_JSON)), hospitalHandler::patch)
+                .andRoute(DELETE("/{id}").and(accept(APPLICATION_JSON)), hospitalHandler::delete)
                 .andRoute(GET("/{id}/with-departments").and(accept(APPLICATION_JSON)), hospitalHandler::getHospitalWithDepartments)
                 .andRoute(GET("/{id}/with-departments-and-patients").and(accept(APPLICATION_JSON)), hospitalHandler::getHospitalWithDepartmentsAndPatients)
                 .andRoute(GET("/{id}/with-patients").and(accept(APPLICATION_JSON)), hospitalHandler::getHospitalWithPatients);
 
-        RouterFunction<ServerResponse> nestedRoute =RouterFunctions.nest(RequestPredicates.path("/v1"), hospitalRoutes);
+        RouterFunction<ServerResponse> nestedRoute =RouterFunctions.nest(RequestPredicates.path("/service"), hospitalRoutes);
 
-        return hospitalRoutes;
+        //return hospitalRoutes;
         //For Swagger
-        //return nestedRoute;
+        return nestedRoute;
 
     }
 

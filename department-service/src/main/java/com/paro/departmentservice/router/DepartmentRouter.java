@@ -22,15 +22,18 @@ public class DepartmentRouter {
                 .route(GET("/").and(accept(APPLICATION_JSON)), departmentHandler::getAll)
                 .andRoute(GET("/{id}").and(accept(APPLICATION_JSON)), departmentHandler::getByDepartmentId)
                 .andRoute(POST("/").and(accept(APPLICATION_JSON)).and(contentType(APPLICATION_JSON)), departmentHandler::add)
+                .andRoute(PUT("/{id}").and(accept(APPLICATION_JSON)), departmentHandler::put)
+                .andRoute(PATCH("/{id}").and(accept(APPLICATION_JSON)), departmentHandler::patch)
+                .andRoute(DELETE("/{id}").and(accept(APPLICATION_JSON)), departmentHandler::delete)
                 .andRoute(GET("/hospital/{hospitalId}").and(accept(APPLICATION_JSON)), departmentHandler::getByHospitalId)
                 .andRoute(GET("/hospital/{hospitalId}/with-patients").and(accept(APPLICATION_JSON)), departmentHandler::getByHospitalWithPatients);
 
 
-        RouterFunction<ServerResponse> nestedRoute =RouterFunctions.nest(RequestPredicates.path("/v1"), departmentRoutes);
+        RouterFunction<ServerResponse> nestedRoute =RouterFunctions.nest(RequestPredicates.path("/service"), departmentRoutes);
 
-        return departmentRoutes;
+        //return departmentRoutes;
         //For Swagger
-        //return nestedRoute;
+        return nestedRoute;
 
     }
 
